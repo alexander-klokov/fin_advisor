@@ -1,4 +1,4 @@
-MODULE='src.train.train'
+MODULE='src.pipeline-training.train'
 
 # train:
 # 	poetry run python -m ${MODULE} \
