@@ -6,6 +6,7 @@ import evaluate
 
 from datasets import load_dataset
 
+from transformers import Trainer
 from transformers import AutoTokenizer
 from transformers import AutoModelForSequenceClassification
 from transformers import TrainingArguments
