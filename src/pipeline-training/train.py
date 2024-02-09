@@ -13,6 +13,21 @@ from transformers import TrainingArguments
 
 from ..utils.log_memory import log_gpu_memory, log_ram
 
+metric = evaluate.load("accuracy")
+
+def get_data():
+    dataset = load_dataset("yelp_review_full")
+    tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
+
+    def tokenize_function(examples):
+        return tokenizer(examples["text"], padding="max_length", truncation=True)
+
+    tokenized_datasets = dataset.map(tokenize_function, batched=True)
+
+    train_dataset = tokenized_datasets["train"].shuffle(seed=42).select(range(1000))
+    eval_dataset = tokenized_datasets["test"].shuffle(seed=42).select(range(1000))
+
+    return train_dataset, eval_dataset
 
 # def train(data: str, output: str):
 def train():
@@ -27,25 +42,11 @@ def train():
 
     logger.info("#" * 64)
 
-    dataset = load_dataset("yelp_review_full")
+    train_dataset, eval_dataset = get_data()
 
-    print(dataset["train"][100])
-
-    tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
-
-    def tokenize_function(examples):
-        return tokenizer(examples["text"], padding="max_length", truncation=True)
-
-    tokenized_datasets = dataset.map(tokenize_function, batched=True)
-
-    small_train_dataset = tokenized_datasets["train"].shuffle(seed=42).select(range(1000))
-    small_eval_dataset = tokenized_datasets["test"].shuffle(seed=42).select(range(1000))
-
-    model = AutoModelForSequenceClassification.from_pretrained("bert-base-cased", num_labels=5)
+    model = AutoModelForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=5)
 
     training_args = TrainingArguments(output_dir="test_trainer")
-
-    metric = evaluate.load("accuracy")
 
     def compute_metrics(eval_pred):
         logits, labels = eval_pred
@@ -55,8 +56,8 @@ def train():
     trainer = Trainer(
         model=model,
         args=training_args,
-        train_dataset=small_train_dataset,
-        eval_dataset=small_eval_dataset,
+        train_dataset=train_dataset,
+        eval_dataset=eval_dataset,
         compute_metrics=compute_metrics,
     )
     
